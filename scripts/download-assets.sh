@@ -31,9 +31,8 @@ download_drive() {
   download_url "https://drive.usercontent.google.com/download?id=$id&export=download&authuser=0&confirm=t" "$target" "$min_bytes"
 }
 
-# Quaternius Superhero Male: CC0 mesh with the skeleton calibrated by this project.
-download_url "https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/character.glb" "$CHAR_DIR/character.glb" 700000
-download_url "https://raw.githubusercontent.com/programasweights/avatar/main/public/assets/QUATERNIUS-LICENSE.txt" "$CHAR_DIR/QUATERNIUS-LICENSE.txt" 500
+# Quaternius Casual Male: CC0 rigged character with embedded animations.
+download_drive "1rrj82IYNaSWj5ySxR6fW9oojyHFiW7_r" "$CHAR_DIR/Casual_Male.gltf" 1000000
 
 # Quaternius Cars Pack: CC0 vehicle meshes.
 download_drive "1rImCdSNI-FWIFDtJ1dGgVd6Gu9OTY47v" "$CAR_DIR/SportsCar.fbx" 50000
@@ -42,8 +41,8 @@ download_drive "1Xxe0nYbAx5epeoY8nT9kY48e9vG3LPWK" "$CAR_DIR/NormalCar1.fbx" 500
 download_drive "12nW4fVokNMpylkTjLwvq02goUdylF6Dx" "$CAR_DIR/Cop.fbx" 50000
 
 # Check file signatures, not just download sizes.
-if ! head -c 4 "$CHAR_DIR/character.glb" | grep -aq '^glTF'; then
-  echo "Invalid character.glb: GLB signature missing." >&2
+if ! head -c 1 "$CHAR_DIR/Casual_Male.gltf" | grep -aqE '[{]'; then
+  echo "Invalid Casual_Male.gltf: JSON signature missing." >&2
   exit 1
 fi
 for model in "$CAR_DIR/SportsCar.fbx" "$CAR_DIR/SUV.fbx" "$CAR_DIR/NormalCar1.fbx" "$CAR_DIR/Cop.fbx"; do
