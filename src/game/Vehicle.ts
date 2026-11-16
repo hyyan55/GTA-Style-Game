@@ -173,7 +173,7 @@ export class Vehicle {
       for (let j = 0; j < radial; j++) {
         const a = ring * (radial + 1) + j;
         const b = a + radial + 1;
-        shellIndices.push(a, b, a + 1, b, b + 1, a + 1);
+        shellIndices.push(a, a + 1, b, a + 1, b + 1, b);
       }
     }
     const shell = new THREE.BufferGeometry();
