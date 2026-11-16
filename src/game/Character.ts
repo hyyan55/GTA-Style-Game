@@ -65,7 +65,7 @@ export class Humanoid {
   private meshes: THREE.Mesh[] = [];
   private externalModel?: THREE.Group;
   private externalBaseY = 0;
-  private externalBones: { bone: THREE.Bone; base: THREE.Quaternion; source: THREE.Object3D }[] = [];
+  private externalBones: { bone: THREE.Bone; base: THREE.Quaternion; source: THREE.Object3D; weight: number }[] = [];
   private externalMixer?: THREE.AnimationMixer;
   private externalActions: Partial<Record<'idle' | 'walk' | 'run' | 'jump', THREE.AnimationAction>> = {};
   private externalActiveAction?: THREE.AnimationAction;
@@ -218,17 +218,23 @@ export class Humanoid {
         const left = /left|_l$|l$/.test(name);
         const right = /right|_r$|r$/.test(name);
         let sourceRig: THREE.Object3D | undefined;
+        let weight = 1;
         if (name.includes('pelvis') || name === 'hips') sourceRig = this.hips;
-        else if (name.includes('spine') || name.includes('chest')) sourceRig = this.torso;
-        else if (name.includes('head')) sourceRig = this.head;
+        else if (name.includes('spine') || name.includes('chest')) {
+          sourceRig = this.torso;
+          weight = 0.32;
+        } else if (name.includes('head')) sourceRig = this.head;
         else if (name.includes('forearm') || name.includes('lowerarm')) sourceRig = left ? this.elbowL : right ? this.elbowR : undefined;
-        else if (name.includes('upperarm') || name.includes('clavicle') || name.includes('shoulder')) sourceRig = left ? this.armL : right ? this.armR : undefined;
-        else if (name.includes('thigh') || name.includes('upleg')) sourceRig = left ? this.legL : right ? this.legR : undefined;
+        else if (name.includes('upperarm') || name.includes('clavicle') || name.includes('shoulder')) {
+          sourceRig = left ? this.armL : right ? this.armR : undefined;
+          if (name.includes('clavicle') || name.includes('shoulder')) weight = 0.4;
+        } else if (name.includes('thigh') || name.includes('upleg')) sourceRig = left ? this.legL : right ? this.legR : undefined;
         else if (name.includes('calf') || name.includes('lowerleg') || name.includes('shin')) sourceRig = left ? this.kneeL : right ? this.kneeR : undefined;
         if (sourceRig) this.externalBones.push({
           bone: object as THREE.Bone,
           base: (object as THREE.Bone).quaternion.clone(),
           source: sourceRig,
+          weight,
         });
       });
       // Remove the procedural fallback once the authored model is ready.
@@ -280,8 +286,9 @@ export class Humanoid {
       this.externalMixer.update(dt);
       return;
     }
-    this.externalBones.forEach(({ bone, base, source }) => {
+    this.externalBones.forEach(({ bone, base, source, weight }) => {
       const delta = new THREE.Quaternion().setFromEuler(source.rotation);
+      delta.slerp(new THREE.Quaternion(), 1 - weight);
       bone.quaternion.copy(base).multiply(delta);
     });
   }
