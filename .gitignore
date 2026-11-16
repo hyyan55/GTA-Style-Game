@@ -1,1 +1,6 @@
 node_modules/
+
+# Downloaded CC0 3D assets (re-fetched automatically by npm run build)
+/public/models/character.glb
+/public/models/QUATERNIUS-LICENSE.txt
+/public/models/vehicles/*.fbx
