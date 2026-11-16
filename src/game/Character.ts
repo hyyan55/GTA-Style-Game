@@ -28,7 +28,7 @@ let characterSource: Promise<GLTF> | null = null;
 function loadCharacterSource() {
   if (!characterSource) {
     characterSource = new Promise<GLTF>((resolve, reject) => {
-      characterLoader.load(`${import.meta.env.BASE_URL}models/character.glb`, resolve, undefined, reject);
+      characterLoader.load(`${import.meta.env.BASE_URL}models/Casual_Male.gltf`, resolve, undefined, reject);
     });
     characterSource.catch(() => { characterSource = null; });
   }
