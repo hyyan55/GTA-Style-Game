@@ -14,7 +14,7 @@ The GLB preserves the Quaternius skeleton and is the model calibrated by the cha
 
 - Models: `SportsCar.fbx`, `SUV.fbx`, `NormalCar1.fbx`, `Cop.fbx`
 - Artist: Quaternius
-- Pack: Cars Pack (November 2018)
+- Pack: Realistic Car Pack — November 2018
 - License: **CC0 1.0 Universal**
 - Official pack: https://quaternius.com/packs/cars.html
 - Runtime directory: `public/models/vehicles/`
