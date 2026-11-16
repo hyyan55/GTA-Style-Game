@@ -236,17 +236,18 @@ export class Vehicle {
     });
     this.materials.push(detailMat, chromeMat, windowMat, lensMat, signalMat);
 
+    const detailBatches = new Map<THREE.Material, THREE.BufferGeometry[]>();
     const part = (
       geometry: THREE.BufferGeometry, material: THREE.Material,
       x: number, y: number, z: number, rx = 0, ry = 0, rz = 0
     ) => {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(x, y, z);
-      mesh.rotation.set(rx, ry, rz);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      this.body.add(mesh);
-      return mesh;
+      geometry.rotateX(rx);
+      geometry.rotateY(ry);
+      geometry.rotateZ(rz);
+      geometry.translate(x, y, z);
+      const batch = detailBatches.get(material) ?? [];
+      batch.push(geometry);
+      detailBatches.set(material, batch);
     };
     const box = (w: number, h: number, d: number, material: THREE.Material,
       x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) =>
@@ -284,20 +285,15 @@ export class Vehicle {
       box(0.32, 0.2, 0.12, seatMat, side * 0.43, cabinFloorY + 0.78, cabinZ - 0.52);
     }
     box(s.width * 0.8, 0.2, 0.24, dashMat, 0, cabinFloorY + 0.48, s.length * 0.19, -0.12);
-    const steering = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 7, 22), chromeMat);
-    steering.position.set(0.36, cabinFloorY + 0.55, s.length * 0.2);
-    steering.rotation.x = 0.28;
-    steering.rotation.z = -0.16;
-    this.body.add(steering);
+    part(new THREE.TorusGeometry(0.22, 0.025, 7, 22), chromeMat,
+      0.36, cabinFloorY + 0.55, s.length * 0.2, 0.28, 0, -0.16);
     box(0.18, 0.12, 0.24, detailMat, -0.02, cabinFloorY + 0.24, cabinZ - 0.02);
 
     // Wheel-arch lips follow the tyre profile instead of leaving square cut-outs.
     for (const side of [-1, 1]) {
       for (const z of [-s.length * 0.32, s.length * 0.32]) {
-        const arch = new THREE.Mesh(new THREE.TorusGeometry(this.wheelR * 1.12, 0.055, 6, 22, Math.PI), detailMat);
-        arch.rotation.y = Math.PI / 2;
-        arch.position.set(side * (s.width * 0.49), this.wheelR + 0.02, z);
-        this.body.add(arch);
+        part(new THREE.TorusGeometry(this.wheelR * 1.12, 0.055, 6, 22, Math.PI),
+          detailMat, side * (s.width * 0.49), this.wheelR + 0.02, z, 0, Math.PI / 2);
       }
     }
 
@@ -316,6 +312,17 @@ export class Vehicle {
     // Subtle roof antenna and front badge.
     part(new THREE.CylinderGeometry(0.012, 0.018, 0.22, 6), detailMat, 0, cabinTop + 0.12, -s.length * 0.18, -0.18);
     part(new THREE.SphereGeometry(0.055, 10, 8), chromeMat, 0, s.clearance + 0.48, s.length * 0.52);
+
+    // Merge static details by material to keep draw calls low on mobile GPUs.
+    detailBatches.forEach((geometries, material) => {
+      const merged = mergeGeometries(geometries, false);
+      geometries.forEach((geometry) => geometry.dispose());
+      if (!merged) return;
+      const mesh = new THREE.Mesh(merged, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.body.add(mesh);
+    });
 
     // police light bar
     if (this.isPolice) {
