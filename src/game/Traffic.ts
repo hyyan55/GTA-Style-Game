@@ -32,7 +32,8 @@ export class TrafficCar {
     this.along = along;
     this.cruise = 8 + rnd() * 5;
     this.wobble = rnd() * 10;
-    const kind = rnd() < 0.2 ? 'van' : rnd() < 0.45 ? 'suv' : 'sedan';
+    const roll = rnd();
+    const kind = roll < 0.16 ? 'van' : roll < 0.38 ? 'suv' : roll < 0.58 ? 'sports' : 'sedan';
     const color = CAR_COLORS[Math.floor(rnd() * CAR_COLORS.length)];
     const heading = axis === 'z' ? (dir > 0 ? 0 : Math.PI) : dir > 0 ? Math.PI / 2 : -Math.PI / 2;
     const x = axis === 'z' ? lane : along;
