@@ -215,6 +215,75 @@ export class Vehicle {
     addMerged(headGeos, headMat, false);
     addMerged(tailGeos, tailMat, false);
 
+    // Fine exterior details: glass panels, door seams, mirrors, grille and lighting.
+    const detailMat = new THREE.MeshStandardMaterial({ color: 0x252a30, roughness: 0.72, metalness: 0.42 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xb9c2c9, roughness: 0.28, metalness: 0.82 });
+    const windowMat = new THREE.MeshPhysicalMaterial({
+      color: 0x182b38, roughness: 0.12, metalness: 0.18,
+      transparent: true, opacity: 0.82, clearcoat: 0.9, clearcoatRoughness: 0.08,
+    });
+    const lensMat = new THREE.MeshPhysicalMaterial({
+      color: 0xe9f3ff, emissive: 0xffedc5, emissiveIntensity: 0.32,
+      roughness: 0.16, metalness: 0.12, clearcoat: 1,
+    });
+    const signalMat = new THREE.MeshStandardMaterial({
+      color: 0xff8a25, emissive: 0xff4a08, emissiveIntensity: 0.55, roughness: 0.3,
+    });
+    this.materials.push(detailMat, chromeMat, windowMat, lensMat, signalMat);
+
+    const part = (
+      geometry: THREE.BufferGeometry, material: THREE.Material,
+      x: number, y: number, z: number, rx = 0, ry = 0, rz = 0
+    ) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(x, y, z);
+      mesh.rotation.set(rx, ry, rz);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.body.add(mesh);
+      return mesh;
+    };
+    const box = (w: number, h: number, d: number, material: THREE.Material,
+      x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) =>
+      part(new THREE.BoxGeometry(w, h, d), material, x, y, z, rx, ry, rz);
+
+    // Separate front/rear glass and side glazing give the cabin a real window layout.
+    const cabinTop = bodyY + s.bodyH / 2 + s.roofH;
+    const sideX = s.width * 0.445;
+    const sideWindowZ = cabinZ;
+    box(0.035, s.roofH * 0.72, cabinLen * 0.68, windowMat, -sideX, bodyY + s.bodyH / 2 + s.roofH * 0.49, sideWindowZ);
+    box(0.035, s.roofH * 0.72, cabinLen * 0.68, windowMat, sideX, bodyY + s.bodyH / 2 + s.roofH * 0.49, sideWindowZ);
+    // B-pillars and door divisions.
+    for (const side of [-1, 1]) {
+      box(0.055, s.roofH * 0.94, 0.075, detailMat, side * sideX, bodyY + s.bodyH / 2 + s.roofH * 0.5, cabinZ);
+      box(0.035, 0.025, s.length * 0.24, detailMat, side * (s.width * 0.495), bodyY + 0.05, s.length * 0.04);
+      box(0.12, 0.035, 0.055, chromeMat, side * (s.width * 0.505), bodyY + 0.14, s.length * 0.04);
+      // Side mirrors with reflective caps.
+      box(0.2, 0.12, 0.16, paint, side * (s.width * 0.54), bodyY + 0.2, s.length * 0.19);
+      box(0.012, 0.075, 0.12, chromeMat, side * (s.width * 0.595), bodyY + 0.2, s.length * 0.19);
+      // Side indicator and lower sill.
+      box(0.035, 0.07, 0.13, signalMat, side * (s.width * 0.503), bodyY + 0.02, s.length * 0.22);
+      box(0.07, 0.11, s.length * 0.58, detailMat, side * (s.width * 0.49), s.clearance + 0.1, 0);
+    }
+    // Windscreen and rear screen are angled, glossy panes.
+    box(s.width * 0.78, 0.045, 0.58, windowMat, 0, bodyY + s.bodyH / 2 + s.roofH * 0.42, s.length * 0.205, -0.58);
+    box(s.width * 0.76, 0.045, 0.48, windowMat, 0, bodyY + s.bodyH / 2 + s.roofH * 0.42, -s.length * 0.245, 0.58);
+    // Front grille, lower intake, registration plate and rear reflectors.
+    box(s.width * 0.34, 0.18, 0.045, detailMat, 0, s.clearance + 0.39, s.length * 0.505);
+    box(s.width * 0.22, 0.035, 0.05, chromeMat, 0, s.clearance + 0.43, s.length * 0.512);
+    box(0.42, 0.16, 0.035, chromeMat, 0, s.clearance + 0.2, s.length * 0.515);
+    box(0.46, 0.15, 0.035, chromeMat, 0, s.clearance + 0.2, -s.length * 0.515);
+    // Distinct headlamp lenses, amber indicators and rear light clusters.
+    for (const side of [-1, 1]) {
+      box(s.width * 0.2, 0.17, 0.055, lensMat, side * s.width * 0.32, s.clearance + 0.45, s.length * 0.51);
+      box(0.09, 0.12, 0.06, signalMat, side * s.width * 0.43, s.clearance + 0.43, s.length * 0.51);
+      box(s.width * 0.19, 0.18, 0.06, tailMat, side * s.width * 0.34, s.clearance + 0.44, -s.length * 0.51);
+      box(0.08, 0.09, 0.065, lensMat, side * s.width * 0.34, s.clearance + 0.29, -s.length * 0.515);
+    }
+    // Subtle roof antenna and front badge.
+    part(new THREE.CylinderGeometry(0.012, 0.018, 0.22, 6), detailMat, 0, cabinTop + 0.12, -s.length * 0.18, -0.18);
+    part(new THREE.SphereGeometry(0.055, 10, 8), chromeMat, 0, s.clearance + 0.48, s.length * 0.52);
+
     // police light bar
     if (this.isPolice) {
       const redMat = new THREE.MeshStandardMaterial({ color: 0x330000, emissive: 0xff1111, emissiveIntensity: 1.2 });
@@ -242,7 +311,9 @@ export class Vehicle {
     };
     const tyreMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.9, metalness: 0.1 });
     const hubMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.4, metalness: 0.45 });
-    this.materials.push(tyreMat, hubMat);
+    const rimDark = new THREE.MeshStandardMaterial({ color: 0x303943, roughness: 0.32, metalness: 0.78 });
+    const brakeMat = new THREE.MeshStandardMaterial({ color: 0x777f87, roughness: 0.48, metalness: 0.72 });
+    this.materials.push(tyreMat, hubMat, rimDark, brakeMat);
     const offX = s.width / 2 - 0.1;
     const tyrePair = mergeGeometries([wheelGeo(offX), wheelGeo(-offX)], false)!;
     const hubPair = mergeGeometries([hubGeo(offX), hubGeo(-offX)], false)!;
@@ -257,7 +328,22 @@ export class Vehicle {
       const tyre = new THREE.Mesh(tyrePair, tyreMat);
       tyre.castShadow = true;
       const hub = new THREE.Mesh(hubPair, hubMat);
-      parent.add(tyre, hub);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(this.wheelR * 0.48, this.wheelR * 0.075, 7, 18), rimDark);
+      rim.rotation.y = Math.PI / 2;
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(this.wheelR * 0.38, this.wheelR * 0.38, 0.27, 18), brakeMat);
+      disc.rotation.z = Math.PI / 2;
+      const spokes = new THREE.Group();
+      for (let spoke = 0; spoke < 5; spoke++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(this.wheelR * 0.1, this.wheelR * 0.72, 0.035), hubMat);
+        bar.rotation.z = (Math.PI * 2 * spoke) / 5;
+        spokes.add(bar);
+      }
+      spokes.position.x = s.width / 2 + 0.035;
+      const rim2 = rim.clone();
+      rim2.position.x = -s.width / 2 - 0.035;
+      const spokes2 = spokes.clone();
+      spokes2.position.x = -s.width / 2 - 0.035;
+      parent.add(tyre, hub, rim, rim2, disc, spokes, spokes2);
     }
 
     // headlight ground glow
