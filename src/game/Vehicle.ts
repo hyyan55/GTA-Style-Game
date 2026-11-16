@@ -109,13 +109,18 @@ export class Vehicle {
 
   private buildMesh(kind: CarKind, color: string) {
     const s = this.spec;
-    const paint = new THREE.MeshStandardMaterial({
+    const paint = new THREE.MeshPhysicalMaterial({
       color,
-      roughness: 0.42,
-      metalness: 0.06,
-      envMapIntensity: 1,
+      roughness: 0.28,
+      metalness: 0.22,
+      clearcoat: 0.82,
+      clearcoatRoughness: 0.16,
+      envMapIntensity: 1.15,
     });
-    const glass = new THREE.MeshStandardMaterial({ color: 0x22303a, roughness: 0.18, metalness: 0.1 });
+    const glass = new THREE.MeshPhysicalMaterial({
+      color: 0x172633, roughness: 0.12, metalness: 0.18,
+      clearcoat: 1, clearcoatRoughness: 0.06,
+    });
     const trim = new THREE.MeshStandardMaterial({ color: 0x17191d, roughness: 0.72, metalness: 0.35 });
     const headMat = new THREE.MeshStandardMaterial({
       color: 0xfff6da,
