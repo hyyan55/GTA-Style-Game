@@ -599,7 +599,7 @@ export class Game {
     this.updateMission(dt);
     this.updatePickups(dt);
     this.updateCamera(dt);
-    this.updateSun();
+    this.updateSun(dt);
 
     this.hudTimer += dt;
     if (this.hudTimer > 0.12) {
@@ -1007,7 +1007,7 @@ export class Game {
     this.police.vehicle.setHeadlights(lightsOn);
   }
 
-  private updateSun() {
+  private updateSun(dt: number) {
     const focus = this.driving ? this.driving.pos : this.player.pos;
     const ang = (this.timeOfDay - 0.25) * Math.PI * 2;
     const dir = new THREE.Vector3(Math.cos(ang) * 0.8, Math.max(0.12, Math.sin(ang)), Math.cos(ang) * 0.45 + 0.2).normalize();
@@ -1016,7 +1016,7 @@ export class Game {
     this.sun.target.updateMatrixWorld();
     this.stars.position.set(this.camera.position.x, 0, this.camera.position.z);
     this.clouds.forEach((c) => {
-      c.position.x += 0.6;
+      c.position.x += 0.6 * dt;
       if (c.position.x > 480) c.position.x = -480;
     });
   }
