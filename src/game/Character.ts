@@ -23,7 +23,7 @@ const mat = (color: number, roughness = 0.75, metalness = 0.05) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive: color, emissiveIntensity: 0.035 });
 
 function capsule(r: number, len: number) {
-  return new THREE.CapsuleGeometry(r, len, 3, 8);
+  return new THREE.CapsuleGeometry(r, len, 5, 12);
 }
 
 /**
@@ -72,10 +72,12 @@ export class Humanoid {
     this.torso.position.y = 0.04;
     this.hips.add(this.torso);
 
-    // torso with jacket over shirt
-    add(this.torso, new THREE.BoxGeometry(0.42, 0.52, 0.25), jacketMat, 0, 0.3, 0);
+    // torso with a softly sculpted jacket silhouette over the shirt.
+    const jacketBody = add(this.torso, capsule(0.21, 0.15), jacketMat, 0, 0.3, 0);
+    jacketBody.scale.z = 0.68;
     add(this.torso, new THREE.BoxGeometry(0.3, 0.3, 0.06), shirtMat, 0, 0.38, 0.12);
-    add(this.torso, new THREE.BoxGeometry(0.44, 0.1, 0.26), jacketMat, 0, 0.52, 0);
+    const shoulderLine = add(this.torso, capsule(0.22, 0.1), jacketMat, 0, 0.51, 0);
+    shoulderLine.scale.z = 0.62;
     add(this.torso, new THREE.BoxGeometry(0.4, 0.09, 0.24), mat(0x14161a, 0.7), 0, 0.06, 0);
     // collar: jacket all round, with a sliver of shirt at the front
     add(this.torso, new THREE.BoxGeometry(0.22, 0.08, 0.2), jacketMat, 0, 0.575, 0);
