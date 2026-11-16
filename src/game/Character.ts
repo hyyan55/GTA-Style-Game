@@ -11,16 +11,16 @@ export interface CharacterColors {
 }
 
 export const DEFAULT_COLORS: CharacterColors = {
-  skin: 0xb98a68,
-  shirt: 0xe8e5de,
-  jacket: 0x22262e,
-  pants: 0x2e3642,
-  shoes: 0x14161a,
-  hair: 0x17181b,
+  skin: 0xd6a17d,
+  shirt: 0xf4f0e6,
+  jacket: 0x315574,
+  pants: 0x405064,
+  shoes: 0x252b32,
+  hair: 0x29231f,
 };
 
 const mat = (color: number, roughness = 0.75, metalness = 0.05) =>
-  new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive: color, emissiveIntensity: 0.035 });
 
 function capsule(r: number, len: number) {
   return new THREE.CapsuleGeometry(r, len, 3, 8);
