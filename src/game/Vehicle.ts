@@ -268,6 +268,34 @@ export class Vehicle {
     // Windscreen and rear screen are angled, glossy panes.
     box(s.width * 0.78, 0.045, 0.58, windowMat, 0, bodyY + s.bodyH / 2 + s.roofH * 0.42, s.length * 0.205, -0.58);
     box(s.width * 0.76, 0.045, 0.48, windowMat, 0, bodyY + s.bodyH / 2 + s.roofH * 0.42, -s.length * 0.245, 0.58);
+    // Cabin interior: seats, headrests, dashboard and steering wheel.
+    const seatMat = new THREE.MeshStandardMaterial({ color: 0x242b32, roughness: 0.92 });
+    const dashMat = new THREE.MeshStandardMaterial({ color: 0x111820, roughness: 0.55 });
+    this.materials.push(seatMat, dashMat);
+    const cabinFloorY = bodyY + s.bodyH * 0.12;
+    for (const side of [-1, 1]) {
+      box(0.58, 0.16, 0.62, seatMat, side * 0.43, cabinFloorY + 0.1, cabinZ - 0.28);
+      box(0.56, 0.58, 0.16, seatMat, side * 0.43, cabinFloorY + 0.43, cabinZ - 0.52, -0.08);
+      box(0.32, 0.2, 0.12, seatMat, side * 0.43, cabinFloorY + 0.78, cabinZ - 0.52);
+    }
+    box(s.width * 0.8, 0.2, 0.24, dashMat, 0, cabinFloorY + 0.48, s.length * 0.19, -0.12);
+    const steering = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 7, 22), chromeMat);
+    steering.position.set(0.36, cabinFloorY + 0.55, s.length * 0.2);
+    steering.rotation.x = 0.28;
+    steering.rotation.z = -0.16;
+    this.body.add(steering);
+    box(0.18, 0.12, 0.24, detailMat, -0.02, cabinFloorY + 0.24, cabinZ - 0.02);
+
+    // Wheel-arch lips follow the tyre profile instead of leaving square cut-outs.
+    for (const side of [-1, 1]) {
+      for (const z of [-s.length * 0.32, s.length * 0.32]) {
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(this.wheelR * 1.12, 0.055, 6, 22, Math.PI), detailMat);
+        arch.rotation.y = Math.PI / 2;
+        arch.position.set(side * (s.width * 0.49), this.wheelR + 0.02, z);
+        this.body.add(arch);
+      }
+    }
+
     // Front grille, lower intake, registration plate and rear reflectors.
     box(s.width * 0.34, 0.18, 0.045, detailMat, 0, s.clearance + 0.39, s.length * 0.505);
     box(s.width * 0.22, 0.035, 0.05, chromeMat, 0, s.clearance + 0.43, s.length * 0.512);
