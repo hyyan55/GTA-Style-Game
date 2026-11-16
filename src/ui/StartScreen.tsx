@@ -40,11 +40,11 @@ export default function StartScreen({ onStart, quality, setQuality }: Props) {
         <div className="start-controls">
           <div>
             <h4>TOUCH</h4>
-            <p>Left joystick to move · drag the right side to look · buttons for run, jump and enter/exit.</p>
+            <p>Left joystick to move and steer · drag to look · buttons for run / handbrake, jump and enter / exit.</p>
           </div>
           <div>
             <h4>KEYBOARD</h4>
-            <p>WASD move · mouse drag to look · Shift run · Space jump · E enter / exit · Esc pause.</p>
+            <p>WASD move and steer · mouse drag to look · Shift run / handbrake · Space jump · E enter / exit · Esc pause.</p>
           </div>
         </div>
       </div>
