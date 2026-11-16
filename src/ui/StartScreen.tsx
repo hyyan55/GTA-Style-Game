@@ -48,7 +48,7 @@ export default function StartScreen({ onStart, quality, setQuality }: Props) {
           </div>
         </div>
       </div>
-      <div className="start-footer">All geometry, textures and audio are generated in real time — no downloads.</div>
+      <div className="start-footer">CC0 character and vehicle models are bundled locally; the city and lighting are generated in real time.</div>
     </div>
   );
 }
