@@ -619,7 +619,7 @@ export class Game {
     const controls = {
       throttle: clamp(move.z, 0, 1),
       brake: clamp(-move.z, 0, 1),
-      steer: -clamp(move.x, -1, 1), // camera is behind the car; negative heading is screen-right
+      steer: clamp(move.x, -1, 1), // positive joystick X turns toward screen-right from the chase camera
       handbrake: this.input.run,
     };
     car.update(dt, controls, this.city);
