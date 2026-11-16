@@ -239,7 +239,10 @@ export class Humanoid {
         mesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         const makeMaterial = () => new THREE.MeshStandardMaterial({
           color: 0xffffff, vertexColors: true, roughness: 0.76, metalness: 0.025,
+          side: THREE.DoubleSide,
         });
+        if (Array.isArray(mesh.material)) mesh.material.forEach((material) => material.dispose());
+        else mesh.material.dispose();
         mesh.material = Array.isArray(mesh.material)
           ? mesh.material.map(() => makeMaterial())
           : makeMaterial();
