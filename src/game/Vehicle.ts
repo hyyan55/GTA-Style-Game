@@ -145,14 +145,49 @@ export class Vehicle {
     const headGeos: THREE.BufferGeometry[] = [];
     const tailGeos: THREE.BufferGeometry[] = [];
 
-    // main body
-    paintGeos.push(placed(taperedBox(s.width, s.bodyH, s.length, 0.97, 0.99, 2), 0, bodyY, 0));
-    // hood + trunk
+    // Sculpted continuous body shell with tapered nose, shoulders and rear quarter panels.
+    const shellPositions: number[] = [];
+    const shellUvs: number[] = [];
+    const shellIndices: number[] = [];
+    const sections = [
+      [-s.length * 0.5, 0.72], [-s.length * 0.43, 0.9], [-s.length * 0.3, 0.97],
+      [-s.length * 0.08, 1], [s.length * 0.2, 1], [s.length * 0.36, 0.96],
+      [s.length * 0.46, 0.88], [s.length * 0.5, 0.72],
+    ];
+    const radial = 18;
+    sections.forEach(([z, widthFactor], ring) => {
+      for (let j = 0; j <= radial; j++) {
+        const a = (j / radial) * Math.PI * 2;
+        const side = Math.cos(a);
+        const vertical = Math.sin(a);
+        const shoulder = 0.88 + 0.12 * Math.max(0, vertical);
+        shellPositions.push(
+          side * s.width * 0.5 * widthFactor * shoulder,
+          bodyY + vertical * s.bodyH * 0.5,
+          z
+        );
+        shellUvs.push(j / radial, ring / (sections.length - 1));
+      }
+    });
+    for (let ring = 0; ring < sections.length - 1; ring++) {
+      for (let j = 0; j < radial; j++) {
+        const a = ring * (radial + 1) + j;
+        const b = a + radial + 1;
+        shellIndices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+    const shell = new THREE.BufferGeometry();
+    shell.setAttribute('position', new THREE.Float32BufferAttribute(shellPositions, 3));
+    shell.setAttribute('uv', new THREE.Float32BufferAttribute(shellUvs, 2));
+    shell.setIndex(shellIndices);
+    shell.computeVertexNormals();
+    paintGeos.push(shell);
+    // Raised bonnet and boot panels follow the body curvature.
     paintGeos.push(
-      placed(taperedBox(s.width * 0.92, 0.14, s.length * 0.26, 0.95, 1, 2), 0, bodyY + s.bodyH / 2, s.length * 0.3)
+      placed(taperedBox(s.width * 0.82, 0.07, s.length * 0.23, 0.96, 1, 2), 0, bodyY + s.bodyH * 0.46, s.length * 0.31)
     );
     paintGeos.push(
-      placed(taperedBox(s.width * 0.92, 0.14, s.length * 0.18, 0.95, 1, 2), 0, bodyY + s.bodyH / 2, -s.length * 0.37)
+      placed(taperedBox(s.width * 0.82, 0.07, s.length * 0.16, 0.96, 1, 2), 0, bodyY + s.bodyH * 0.46, -s.length * 0.38)
     );
     // greenhouse / cabin
     const cabinLen = kind === 'van' ? s.length * 0.52 : s.length * 0.46;
