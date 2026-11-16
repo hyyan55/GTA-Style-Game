@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { clamp, damp, taperedBox, placed, resolveCircleBox } from './utils';
 import type { CityData } from './City';
@@ -69,6 +70,26 @@ const SPECS: Record<CarKind, Spec> = {
 
 const tmpPush = { x: 0, z: 0 };
 
+const vehicleModelPaths: Partial<Record<CarKind, string>> = {
+  sedan: '/models/vehicles/NormalCar1.fbx',
+  suv: '/models/vehicles/SUV.fbx',
+  van: '/models/vehicles/NormalCar2.fbx',
+};
+const fbxLoader = new FBXLoader();
+const vehicleModelCache = new Map<string, Promise<THREE.Group>>();
+
+function loadVehicleSource(path: string) {
+  let pending = vehicleModelCache.get(path);
+  if (!pending) {
+    pending = new Promise<THREE.Group>((resolve, reject) => {
+      fbxLoader.load(path, resolve, undefined, reject);
+    });
+    vehicleModelCache.set(path, pending);
+    pending.catch(() => vehicleModelCache.delete(path));
+  }
+  return pending;
+}
+
 export class Vehicle {
   group = new THREE.Group();
   body = new THREE.Group();
@@ -93,6 +114,8 @@ export class Vehicle {
   private sirenTime = 0;
   private wheelR: number;
   private damageFlash = 0;
+  private externalModel?: THREE.Group;
+  private disposed = false;
 
   constructor(kind: CarKind, color: string, x: number, z: number, heading = 0) {
     this.kind = kind;
@@ -104,8 +127,50 @@ export class Vehicle {
 
     this.group.add(this.body);
     this.buildMesh(kind, color);
+    this.loadExternalModel();
     this.group.position.copy(this.pos);
     this.group.rotation.y = heading;
+  }
+
+  private loadExternalModel() {
+    const path = vehicleModelPaths[this.kind];
+    if (!path) return;
+    loadVehicleSource(path).then((source) => {
+      if (this.disposed) return;
+      const model = source.clone(true);
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry = mesh.geometry.clone();
+        if (Array.isArray(mesh.material)) mesh.material = mesh.material.map((material) => material.clone());
+        else mesh.material = mesh.material.clone();
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      });
+
+      // Normalize the imported FBX to the vehicle's world dimensions.
+      model.updateMatrixWorld(true);
+      let bounds = new THREE.Box3().setFromObject(model);
+      const initialSize = bounds.getSize(new THREE.Vector3());
+      if (initialSize.x > initialSize.z) model.rotation.y = Math.PI / 2;
+      model.updateMatrixWorld(true);
+      bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+      const longest = Math.max(size.x, size.z);
+      if (!Number.isFinite(longest) || longest < 0.01) return;
+      model.scale.setScalar(this.spec.length / longest);
+      model.updateMatrixWorld(true);
+      bounds = new THREE.Box3().setFromObject(model);
+      const center = bounds.getCenter(new THREE.Vector3());
+      model.position.x -= center.x;
+      model.position.z -= center.z;
+      model.position.y -= bounds.min.y;
+      this.body.visible = false;
+      this.group.add(model);
+      this.externalModel = model;
+    }).catch(() => {
+      // Keep the procedural vehicle as a safe offline fallback if an asset is absent.
+    });
   }
 
   private buildMesh(kind: CarKind, color: string) {
@@ -562,11 +627,14 @@ export class Vehicle {
   }
 
   dispose() {
+    this.disposed = true;
     this.group.removeFromParent();
     this.group.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {
         m.geometry.dispose();
+        if (Array.isArray(m.material)) m.material.forEach((material) => material.dispose());
+        else m.material?.dispose();
       }
     });
     this.materials.forEach((m) => m.dispose());
