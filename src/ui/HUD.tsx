@@ -145,7 +145,8 @@ export default function HUD({ hud, gameRef, showTouch, onPause, notifications }:
                 onPointerLeave={() => gameRef.current?.setRun(false)}
                 aria-label="Run"
               >
-                <span className="glyph">»</span>
+                <span className="glyph">{hud.inVehicle ? '◉' : '»'}</span>
+                <span className="btn-label">{hud.inVehicle ? 'HANDBRAKE' : 'RUN'}</span>
               </button>
             </div>
           </div>
