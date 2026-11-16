@@ -296,6 +296,8 @@ export class Humanoid {
 
   dispose() {
     this.root.userData.disposed = true;
+    this.externalMixer?.stopAllAction();
+    if (this.externalModel) this.externalMixer?.uncacheRoot(this.externalModel);
     const materials = new Set<THREE.Material>();
     this.root.traverse((object) => {
       const mesh = object as THREE.Mesh;
