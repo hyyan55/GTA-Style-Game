@@ -223,7 +223,8 @@ export function createTraffic(
 
   const peds: Pedestrian[] = [];
   const loops = city.pedLoops;
-  for (let i = 0; i < Math.min(loops.length, 10); i++) {
+  const pedestrianCount = Math.min(loops.length, Math.max(4, Math.round(count * 0.7)));
+  for (let i = 0; i < pedestrianCount; i++) {
     const ped = new Pedestrian(loops[i], Math.floor(rnd() * 4));
     peds.push(ped);
     scene.add(ped.rig.object);
