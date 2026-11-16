@@ -1231,7 +1231,9 @@ export class Game {
     this.audio.dispose();
     this.vehicles.forEach((v) => v.dispose());
     this.traffic.cars.forEach((c) => c.vehicle.dispose());
-    this.player.rig.object.removeFromParent();
+    this.traffic.peds.forEach((ped) => ped.rig.dispose());
+    this.police.vehicle.dispose();
+    this.player.rig.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
