@@ -176,6 +176,18 @@ export class Vehicle {
         shellIndices.push(a, a + 1, b, a + 1, b + 1, b);
       }
     }
+    // Close front and rear body ends so the shell remains solid from every camera angle.
+    const frontCenter = shellPositions.length / 3;
+    shellPositions.push(0, bodyY, -s.length * 0.5);
+    shellUvs.push(0.5, 0);
+    const rearCenter = shellPositions.length / 3;
+    shellPositions.push(0, bodyY, s.length * 0.5);
+    shellUvs.push(0.5, 1);
+    for (let j = 0; j < radial; j++) {
+      shellIndices.push(frontCenter, j + 1, j);
+      const rear = (sections.length - 1) * (radial + 1) + j;
+      shellIndices.push(rearCenter, rear, rear + 1);
+    }
     const shell = new THREE.BufferGeometry();
     shell.setAttribute('position', new THREE.Float32BufferAttribute(shellPositions, 3));
     shell.setAttribute('uv', new THREE.Float32BufferAttribute(shellUvs, 2));
