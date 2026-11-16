@@ -615,7 +615,7 @@ export class Game {
     const controls = {
       throttle: clamp(move.z, 0, 1),
       brake: clamp(-move.z, 0, 1),
-      steer: -clamp(move.x, -1, 1), // touch joystick right must turn the vehicle toward screen-right
+      steer: clamp(move.x, -1, 1), // positive X rotates heading toward the vehicle's right
       handbrake: this.input.run,
     };
     car.update(dt, controls, this.city);
