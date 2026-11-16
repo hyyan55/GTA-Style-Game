@@ -89,6 +89,7 @@ export class Vehicle {
   private materials: THREE.Material[] = [];
   private lightBarMats: THREE.MeshStandardMaterial[] = [];
   private beamMat?: THREE.MeshBasicMaterial;
+  private headlightMat?: THREE.MeshStandardMaterial;
   private sirenTime = 0;
   private wheelR: number;
   private damageFlash = 0;
@@ -135,6 +136,7 @@ export class Vehicle {
       roughness: 0.4,
     });
     this.materials.push(paint, glass, trim, headMat, tailMat);
+    this.headlightMat = headMat;
 
     const bodyY = s.clearance + s.bodyH / 2;
     const roofY = bodyY + s.bodyH / 2 + s.roofH / 2;
@@ -464,6 +466,7 @@ export class Vehicle {
   setHeadlights(on: boolean) {
     this.headlightsOn = on;
     if (this.beamMat) this.beamMat.opacity = on ? 0.75 : 0;
+    if (this.headlightMat) this.headlightMat.emissiveIntensity = on ? 2.2 : 0.08;
   }
 
   /** World-space quad corners for simple vehicle/vehicle overlap tests. */
