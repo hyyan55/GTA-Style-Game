@@ -180,6 +180,18 @@ export class Vehicle {
       this.body.visible = false;
       this.group.add(model);
       this.externalModel = model;
+
+      // Keep the police lightbar visible and animated above the imported vehicle.
+      if (this.isPolice && this.lightBarMats.length === 2) {
+        const roofY = bounds.max.y - bounds.min.y;
+        const bar = new THREE.Group();
+        const red = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.24), this.lightBarMats[0]);
+        const blue = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.24), this.lightBarMats[1]);
+        red.position.set(-0.17, roofY + 0.07, 0);
+        blue.position.set(0.17, roofY + 0.07, 0);
+        bar.add(red, blue);
+        this.group.add(bar);
+      }
     }).catch(() => {
       // Keep the procedural vehicle as a safe offline fallback if an asset is absent.
     });
