@@ -41,4 +41,16 @@ download_drive "1r4gr34s-cNetFINZio-M4i8m2PgzVq_5" "$CAR_DIR/SUV.fbx" 50000
 download_drive "1Xxe0nYbAx5epeoY8nT9kY48e9vG3LPWK" "$CAR_DIR/NormalCar1.fbx" 50000
 download_drive "12nW4fVokNMpylkTjLwvq02goUdylF6Dx" "$CAR_DIR/Cop.fbx" 50000
 
+# Check file signatures, not just download sizes.
+if ! head -c 4 "$CHAR_DIR/character.glb" | grep -aq '^glTF'; then
+  echo "Invalid character.glb: GLB signature missing." >&2
+  exit 1
+fi
+for model in "$CAR_DIR/SportsCar.fbx" "$CAR_DIR/SUV.fbx" "$CAR_DIR/NormalCar1.fbx" "$CAR_DIR/Cop.fbx"; do
+  if ! head -c 18 "$model" | grep -aq 'Kaydara FBX Binary'; then
+    echo "Invalid FBX model: ${model#"$ROOT"/}" >&2
+    exit 1
+  fi
+done
+
 echo "All 3D models downloaded and validated."
