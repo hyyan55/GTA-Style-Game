@@ -5,7 +5,7 @@ import { clamp, damp, taperedBox, placed, resolveCircleBox } from './utils';
 import type { CityData } from './City';
 import { lightPoolTexture } from './textures';
 
-export type CarKind = 'sedan' | 'suv' | 'van' | 'police';
+export type CarKind = 'sedan' | 'suv' | 'van' | 'sports' | 'police';
 
 export interface DriveControls {
   throttle: number;
@@ -56,6 +56,16 @@ const SPECS: Record<CarKind, Spec> = {
     accel: 8,
     maxSpeed: 26,
   },
+  sports: {
+    length: 4.5,
+    width: 1.92,
+    bodyH: 0.5,
+    roofH: 0.42,
+    wheelR: 0.34,
+    clearance: 0.29,
+    accel: 13,
+    maxSpeed: 39,
+  },
   police: {
     length: 4.5,
     width: 1.9,
@@ -71,7 +81,8 @@ const SPECS: Record<CarKind, Spec> = {
 const tmpPush = { x: 0, z: 0 };
 
 const vehicleModelPaths: Partial<Record<CarKind, string>> = {
-  sedan: 'models/vehicles/SportsCar.fbx',
+  sedan: 'models/vehicles/NormalCar1.fbx',
+  sports: 'models/vehicles/SportsCar.fbx',
   suv: 'models/vehicles/SUV.fbx',
   van: 'models/vehicles/NormalCar1.fbx',
   police: 'models/vehicles/Cop.fbx',
