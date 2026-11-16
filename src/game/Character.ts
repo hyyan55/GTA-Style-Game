@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { damp, clamp } from './utils';
 
@@ -22,12 +23,12 @@ export const DEFAULT_COLORS: CharacterColors = {
 };
 
 const characterLoader = new GLTFLoader();
-let characterSource: Promise<THREE.Group> | null = null;
+let characterSource: Promise<GLTF> | null = null;
 
 function loadCharacterSource() {
   if (!characterSource) {
     characterSource = new Promise<THREE.Group>((resolve, reject) => {
-      characterLoader.load(`${import.meta.env.BASE_URL}models/Casual_Male.gltf`, (gltf) => resolve(gltf.scene), undefined, reject);
+      characterLoader.load(`${import.meta.env.BASE_URL}models/Casual_Male.gltf`, resolve, undefined, reject);
     });
     characterSource.catch(() => { characterSource = null; });
   }
@@ -65,6 +66,9 @@ export class Humanoid {
   private externalModel?: THREE.Group;
   private externalBaseY = 0;
   private externalBones: { bone: THREE.Bone; base: THREE.Quaternion; source: THREE.Object3D }[] = [];
+  private externalMixer?: THREE.AnimationMixer;
+  private externalActions: Partial<Record<'idle' | 'walk' | 'run' | 'jump', THREE.AnimationAction>> = {};
+  private externalActiveAction?: THREE.AnimationAction;
 
   constructor(colors: CharacterColors = DEFAULT_COLORS, detailed = true) {
     const skinMat = mat(colors.skin, 0.62);
@@ -186,7 +190,7 @@ export class Humanoid {
   private loadExternalModel() {
     loadCharacterSource().then((source) => {
       if (!this.root.parent && this.root.userData.disposed) return;
-      const model = cloneSkeleton(source) as THREE.Group;
+      const model = cloneSkeleton(source.scene) as THREE.Group;
       model.traverse((object) => {
         const mesh = object as THREE.Mesh;
         if (!mesh.isMesh) return;
@@ -239,14 +243,43 @@ export class Humanoid {
       this.meshes.length = 0;
       this.root.add(model);
       this.externalModel = model;
+
+      if (source.animations.length > 0) {
+        this.externalMixer = new THREE.AnimationMixer(model);
+        const findClip = (pattern: RegExp) => source.animations.find((clip) => pattern.test(clip.name));
+        const idle = findClip(/idle|stand|breath/i) ?? source.animations[0];
+        const walk = findClip(/walk/i) ?? idle;
+        const run = findClip(/run|sprint/i) ?? walk;
+        const jump = findClip(/jump|fall/i) ?? run;
+        this.externalActions = {
+          idle: this.externalMixer.clipAction(idle),
+          walk: this.externalMixer.clipAction(walk),
+          run: this.externalMixer.clipAction(run),
+          jump: this.externalMixer.clipAction(jump),
+        };
+        this.externalActiveAction = this.externalActions.idle;
+        this.externalActiveAction?.play();
+      }
     }).catch(() => {
       // Keep the procedural humanoid visible when the optional model is unavailable.
     });
   }
 
-  private syncExternalRig() {
+  private updateExternalAnimation(dt: number, speed: number, airborne: boolean, sitting: boolean) {
     if (!this.externalModel) return;
     this.externalModel.position.y = this.externalBaseY + (this.hips.position.y - this.pelvisY);
+    if (this.externalMixer) {
+      const key = sitting ? 'idle' : airborne ? 'jump' : speed > 4.2 ? 'run' : speed > 0.25 ? 'walk' : 'idle';
+      const next = this.externalActions[key] ?? this.externalActions.walk ?? this.externalActions.idle;
+      if (next && next !== this.externalActiveAction) {
+        next.reset().fadeIn(0.18).play();
+        this.externalActiveAction?.fadeOut(0.18);
+        this.externalActiveAction = next;
+      }
+      if (this.externalActiveAction) this.externalActiveAction.timeScale = key === 'run' ? 1.25 : 1;
+      this.externalMixer.update(dt);
+      return;
+    }
     this.externalBones.forEach(({ bone, base, source }) => {
       const delta = new THREE.Quaternion().setFromEuler(source.rotation);
       bone.quaternion.copy(base).multiply(delta);
@@ -294,7 +327,7 @@ export class Humanoid {
       this.armR.rotation.x = THREE.MathUtils.damp(this.armR.rotation.x, 1.15, 10, dt);
       this.elbowL.rotation.x = THREE.MathUtils.damp(this.elbowL.rotation.x, -0.75, 10, dt);
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.75, 10, dt);
-      this.syncExternalRig();
+      this.updateExternalAnimation(dt, speed, airborne, sitting);
       return;
     }
 
