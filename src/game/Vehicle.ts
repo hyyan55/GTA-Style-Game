@@ -330,20 +330,24 @@ export class Vehicle {
       const hub = new THREE.Mesh(hubPair, hubMat);
       const rim = new THREE.Mesh(new THREE.TorusGeometry(this.wheelR * 0.48, this.wheelR * 0.075, 7, 18), rimDark);
       rim.rotation.y = Math.PI / 2;
-      const disc = new THREE.Mesh(new THREE.CylinderGeometry(this.wheelR * 0.38, this.wheelR * 0.38, 0.27, 18), brakeMat);
+      rim.position.x = offX + 0.025;
+      const rim2 = rim.clone();
+      rim2.position.x = -offX - 0.025;
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(this.wheelR * 0.38, this.wheelR * 0.38, 0.045, 18), brakeMat);
       disc.rotation.z = Math.PI / 2;
+      disc.position.x = offX - 0.025;
+      const disc2 = disc.clone();
+      disc2.position.x = -offX + 0.025;
       const spokes = new THREE.Group();
       for (let spoke = 0; spoke < 5; spoke++) {
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(this.wheelR * 0.1, this.wheelR * 0.72, 0.035), hubMat);
-        bar.rotation.z = (Math.PI * 2 * spoke) / 5;
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.035, this.wheelR * 0.72, 0.055), hubMat);
+        bar.rotation.x = (Math.PI * 2 * spoke) / 5;
         spokes.add(bar);
       }
-      spokes.position.x = s.width / 2 + 0.035;
-      const rim2 = rim.clone();
-      rim2.position.x = -s.width / 2 - 0.035;
+      spokes.position.x = offX + 0.055;
       const spokes2 = spokes.clone();
-      spokes2.position.x = -s.width / 2 - 0.035;
-      parent.add(tyre, hub, rim, rim2, disc, spokes, spokes2);
+      spokes2.position.x = -offX - 0.055;
+      parent.add(tyre, hub, rim, rim2, disc, disc2, spokes, spokes2);
     }
 
     // headlight ground glow
