@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { damp, clamp } from './utils';
 
 export interface CharacterColors {
@@ -18,6 +20,19 @@ export const DEFAULT_COLORS: CharacterColors = {
   shoes: 0x252b32,
   hair: 0x29231f,
 };
+
+const characterLoader = new GLTFLoader();
+let characterSource: Promise<THREE.Group> | null = null;
+
+function loadCharacterSource() {
+  if (!characterSource) {
+    characterSource = new Promise<THREE.Group>((resolve, reject) => {
+      characterLoader.load('/models/character.glb', (gltf) => resolve(gltf.scene), undefined, reject);
+    });
+    characterSource.catch(() => { characterSource = null; });
+  }
+  return characterSource;
+}
 
 const mat = (color: number, roughness = 0.75, metalness = 0.05) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive: color, emissiveIntensity: 0.035 });
@@ -47,6 +62,9 @@ export class Humanoid {
   private idleTime = 0;
   private pelvisY = 0.94;
   private meshes: THREE.Mesh[] = [];
+  private externalModel?: THREE.Group;
+  private externalBaseY = 0;
+  private externalBones: { bone: THREE.Bone; base: THREE.Quaternion; source: THREE.Object3D }[] = [];
 
   constructor(colors: CharacterColors = DEFAULT_COLORS, detailed = true) {
     const skinMat = mat(colors.skin, 0.62);
@@ -162,6 +180,68 @@ export class Humanoid {
         o.castShadow = true;
       }
     });
+    this.loadExternalModel();
+  }
+
+  private loadExternalModel() {
+    loadCharacterSource().then((source) => {
+      if (!this.root.parent && this.root.userData.disposed) return;
+      const model = cloneSkeleton(source) as THREE.Group;
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry = mesh.geometry.clone();
+        if (Array.isArray(mesh.material)) mesh.material = mesh.material.map((material) => material.clone());
+        else mesh.material = mesh.material.clone();
+        mesh.castShadow = true;
+        mesh.receiveShadow = false;
+      });
+
+      // Fit the authored Quaternius humanoid to the game's 1.8 m character scale.
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      const height = bounds.getSize(new THREE.Vector3()).y;
+      if (!Number.isFinite(height) || height < 0.1) return;
+      const scale = 1.82 / height;
+      model.scale.setScalar(scale);
+      model.updateMatrixWorld(true);
+      const fitted = new THREE.Box3().setFromObject(model);
+      model.position.y = -fitted.min.y;
+      this.externalBaseY = model.position.y;
+      model.traverse((object) => {
+        if (!(object as THREE.Bone).isBone) return;
+        const name = object.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const left = /left|_l$|l$/.test(name);
+        const right = /right|_r$|r$/.test(name);
+        let sourceRig: THREE.Object3D | undefined;
+        if (name.includes('pelvis') || name === 'hips') sourceRig = this.hips;
+        else if (name.includes('spine') || name.includes('chest')) sourceRig = this.torso;
+        else if (name.includes('head')) sourceRig = this.head;
+        else if (name.includes('forearm') || name.includes('lowerarm')) sourceRig = left ? this.elbowL : right ? this.elbowR : undefined;
+        else if (name.includes('upperarm') || name.includes('clavicle') || name.includes('shoulder')) sourceRig = left ? this.armL : right ? this.armR : undefined;
+        else if (name.includes('thigh') || name.includes('upleg')) sourceRig = left ? this.legL : right ? this.legR : undefined;
+        else if (name.includes('calf') || name.includes('lowerleg') || name.includes('shin')) sourceRig = left ? this.kneeL : right ? this.kneeR : undefined;
+        if (sourceRig) this.externalBones.push({
+          bone: object as THREE.Bone,
+          base: (object as THREE.Bone).quaternion.clone(),
+          source: sourceRig,
+        });
+      });
+      this.meshes.forEach((mesh) => { mesh.visible = false; });
+      this.root.add(model);
+      this.externalModel = model;
+    }).catch(() => {
+      // Keep the procedural humanoid visible when the optional model is unavailable.
+    });
+  }
+
+  private syncExternalRig() {
+    if (!this.externalModel) return;
+    this.externalModel.position.y = this.externalBaseY + (this.hips.position.y - this.pelvisY);
+    this.externalBones.forEach(({ bone, base, source }) => {
+      const delta = new THREE.Quaternion().setFromEuler(source.rotation);
+      bone.quaternion.copy(base).multiply(delta);
+    });
   }
 
   get object() {
@@ -173,6 +253,7 @@ export class Humanoid {
   }
 
   dispose() {
+    this.root.userData.disposed = true;
     const materials = new Set<THREE.Material>();
     this.root.traverse((object) => {
       const mesh = object as THREE.Mesh;
@@ -204,6 +285,7 @@ export class Humanoid {
       this.armR.rotation.x = THREE.MathUtils.damp(this.armR.rotation.x, 1.15, 10, dt);
       this.elbowL.rotation.x = THREE.MathUtils.damp(this.elbowL.rotation.x, -0.75, 10, dt);
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.75, 10, dt);
+      this.syncExternalRig();
       return;
     }
 
@@ -236,6 +318,7 @@ export class Humanoid {
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.6, 8, dt);
       this.armL.rotation.z = THREE.MathUtils.damp(this.armL.rotation.z, -0.25, 8, dt);
       this.armR.rotation.z = THREE.MathUtils.damp(this.armR.rotation.z, 0.25, 8, dt);
+      this.syncExternalRig();
       return;
     }
 
@@ -256,6 +339,7 @@ export class Humanoid {
       this.elbowL.rotation.x = THREE.MathUtils.damp(this.elbowL.rotation.x, -0.22, 6, dt);
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.22, 6, dt);
       this.head.rotation.y = THREE.MathUtils.damp(this.head.rotation.y, Math.sin(this.idleTime * 0.31) * 0.25, 3, dt);
+      this.syncExternalRig();
       return;
     }
 
