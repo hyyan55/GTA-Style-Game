@@ -172,6 +172,19 @@ export class Humanoid {
     this.meshes.forEach((m) => (m.castShadow = enabled));
   }
 
+  dispose() {
+    const materials = new Set<THREE.Material>();
+    this.root.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.geometry.dispose();
+      if (Array.isArray(mesh.material)) mesh.material.forEach((material) => materials.add(material));
+      else materials.add(mesh.material);
+    });
+    materials.forEach((material) => material.dispose());
+    this.root.removeFromParent();
+  }
+
   resetPose() {
     this.phase = 0;
   }
