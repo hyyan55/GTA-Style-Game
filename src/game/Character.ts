@@ -90,8 +90,37 @@ export class Humanoid {
     add(this.head, new THREE.SphereGeometry(0.118, detailed ? 12 : 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat, 0, 0.115, 0);
     add(this.head, new THREE.BoxGeometry(0.14, 0.05, 0.04), hairMat, 0, 0.16, -0.09);
     if (detailed) {
-      add(this.head, new THREE.BoxGeometry(0.035, 0.02, 0.01), mat(0x101216, 0.4), -0.042, 0.12, 0.108);
-      add(this.head, new THREE.BoxGeometry(0.035, 0.02, 0.01), mat(0x101216, 0.4), 0.042, 0.12, 0.108);
+      const eyeWhite = mat(0xf1eee8, 0.32);
+      const irisMat = mat(0x34271e, 0.3);
+      const browMat = mat(colors.hair, 0.95);
+      const lipMat = mat(0x70483e, 0.8);
+      // Facial planes and features, oriented toward the character's forward (+Z).
+      add(this.head, new THREE.SphereGeometry(0.018, 8, 6), eyeWhite, -0.043, 0.12, 0.108);
+      add(this.head, new THREE.SphereGeometry(0.018, 8, 6), eyeWhite, 0.043, 0.12, 0.108);
+      add(this.head, new THREE.SphereGeometry(0.009, 8, 6), irisMat, -0.043, 0.12, 0.124);
+      add(this.head, new THREE.SphereGeometry(0.009, 8, 6), irisMat, 0.043, 0.12, 0.124);
+      add(this.head, new THREE.BoxGeometry(0.047, 0.012, 0.018), browMat, -0.043, 0.153, 0.105, 0, 0, -0.08);
+      add(this.head, new THREE.BoxGeometry(0.047, 0.012, 0.018), browMat, 0.043, 0.153, 0.105, 0, 0, 0.08);
+      add(this.head, new THREE.ConeGeometry(0.022, 0.055, 6), skinMat, 0, 0.085, 0.115, Math.PI / 2);
+      add(this.head, new THREE.BoxGeometry(0.045, 0.009, 0.012), lipMat, 0, 0.045, 0.111);
+      add(this.head, new THREE.SphereGeometry(0.035, 8, 7), skinMat, -0.112, 0.08, 0);
+      add(this.head, new THREE.SphereGeometry(0.035, 8, 7), skinMat, 0.112, 0.08, 0);
+      // Hairline, sideburns and neck detail.
+      add(this.head, new THREE.BoxGeometry(0.035, 0.105, 0.04), hairMat, -0.105, 0.035, -0.005);
+      add(this.head, new THREE.BoxGeometry(0.035, 0.105, 0.04), hairMat, 0.105, 0.035, -0.005);
+      add(this.head, new THREE.SphereGeometry(0.022, 8, 6), skinMat, -0.112, 0.08, 0.026);
+      add(this.head, new THREE.SphereGeometry(0.022, 8, 6), skinMat, 0.112, 0.08, 0.026);
+    }
+
+    // Tailored jacket details: lapels, front seam, pockets and cuffs.
+    const seamMat = mat(0x172b3c, 0.82);
+    const stitchMat = mat(0x9ba8ad, 0.8);
+    add(this.torso, new THREE.BoxGeometry(0.035, 0.38, 0.022), seamMat, 0, 0.31, 0.132);
+    add(this.torso, new THREE.BoxGeometry(0.09, 0.2, 0.025), shirtMat, -0.055, 0.47, 0.135, 0, 0, -0.22);
+    add(this.torso, new THREE.BoxGeometry(0.09, 0.2, 0.025), shirtMat, 0.055, 0.47, 0.135, 0, 0, 0.22);
+    for (const side of [-1, 1]) {
+      add(this.torso, new THREE.BoxGeometry(0.12, 0.095, 0.018), seamMat, side * 0.115, 0.2, 0.134);
+      add(this.torso, new THREE.BoxGeometry(0.035, 0.07, 0.02), stitchMat, side * 0.115, 0.2, 0.147);
     }
 
     // arms
@@ -122,6 +151,8 @@ export class Humanoid {
       hip.add(knee);
       add(knee, shinGeo, pantsMat, 0, -0.19, 0);
       add(knee, new THREE.BoxGeometry(0.13, 0.09, 0.27), shoeMat, 0, -0.39, 0.055);
+      add(knee, new THREE.BoxGeometry(0.135, 0.025, 0.275), mat(0x090b0e, 0.95), 0, -0.433, 0.055);
+      add(knee, new THREE.BoxGeometry(0.075, 0.018, 0.11), mat(0x747c82, 0.7, 0.25), 0, -0.36, 0.13);
     }
 
     this.root.traverse((o) => {
