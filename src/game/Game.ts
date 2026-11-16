@@ -139,7 +139,11 @@ export class Game {
   // ---------------------------------------------------------------- setup
   private pixelRatioFor(q: Quality) {
     const dpr = window.devicePixelRatio || 1;
-    return Math.min(dpr, q === 'low' ? 1 : q === 'medium' ? 1.5 : 2);
+    const mobile = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    const cap = mobile
+      ? q === 'low' ? 0.9 : q === 'medium' ? 1.2 : 1.5
+      : q === 'low' ? 1 : q === 'medium' ? 1.5 : 2;
+    return Math.min(dpr, cap);
   }
 
   private buildWorld() {
