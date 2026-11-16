@@ -369,7 +369,7 @@ export class Humanoid {
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.6, 8, dt);
       this.armL.rotation.z = THREE.MathUtils.damp(this.armL.rotation.z, -0.25, 8, dt);
       this.armR.rotation.z = THREE.MathUtils.damp(this.armR.rotation.z, 0.25, 8, dt);
-      this.syncExternalRig();
+      this.updateExternalAnimation(dt, speed, airborne, sitting);
       return;
     }
 
@@ -390,7 +390,7 @@ export class Humanoid {
       this.elbowL.rotation.x = THREE.MathUtils.damp(this.elbowL.rotation.x, -0.22, 6, dt);
       this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.22, 6, dt);
       this.head.rotation.y = THREE.MathUtils.damp(this.head.rotation.y, Math.sin(this.idleTime * 0.31) * 0.25, 3, dt);
-      this.syncExternalRig();
+      this.updateExternalAnimation(dt, speed, airborne, sitting);
       return;
     }
 
@@ -421,7 +421,7 @@ export class Humanoid {
     this.armR.rotation.z = THREE.MathUtils.damp(this.armR.rotation.z, 0.1 + run * 0.05, k, dt);
     this.elbowL.rotation.x = THREE.MathUtils.damp(this.elbowL.rotation.x, -0.25 - run * 1.15, k, dt);
     this.elbowR.rotation.x = THREE.MathUtils.damp(this.elbowR.rotation.x, -0.25 - run * 1.15, k, dt);
-    this.syncExternalRig();
+    this.updateExternalAnimation(dt, speed, airborne, sitting);
     void c;
   }
 }
