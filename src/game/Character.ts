@@ -27,7 +27,7 @@ let characterSource: Promise<THREE.Group> | null = null;
 function loadCharacterSource() {
   if (!characterSource) {
     characterSource = new Promise<THREE.Group>((resolve, reject) => {
-      characterLoader.load('/models/character.glb', (gltf) => resolve(gltf.scene), undefined, reject);
+      characterLoader.load(`${import.meta.env.BASE_URL}models/Casual_Male.gltf`, (gltf) => resolve(gltf.scene), undefined, reject);
     });
     characterSource.catch(() => { characterSource = null; });
   }
