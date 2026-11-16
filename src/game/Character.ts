@@ -227,7 +227,16 @@ export class Humanoid {
           source: sourceRig,
         });
       });
-      this.meshes.forEach((mesh) => { mesh.visible = false; });
+      // Remove the procedural fallback once the authored model is ready.
+      const fallbackMaterials = new Set<THREE.Material>();
+      this.meshes.forEach((mesh) => {
+        mesh.parent?.remove(mesh);
+        mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) mesh.material.forEach((material) => fallbackMaterials.add(material));
+        else fallbackMaterials.add(mesh.material);
+      });
+      fallbackMaterials.forEach((material) => material.dispose());
+      this.meshes.length = 0;
       this.root.add(model);
       this.externalModel = model;
     }).catch(() => {
