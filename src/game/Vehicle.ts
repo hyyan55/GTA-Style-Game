@@ -71,9 +71,10 @@ const SPECS: Record<CarKind, Spec> = {
 const tmpPush = { x: 0, z: 0 };
 
 const vehicleModelPaths: Partial<Record<CarKind, string>> = {
-  sedan: '/models/vehicles/NormalCar1.fbx',
-  suv: '/models/vehicles/SUV.fbx',
-  van: '/models/vehicles/NormalCar2.fbx',
+  sedan: 'models/vehicles/SportsCar.fbx',
+  suv: 'models/vehicles/SUV.fbx',
+  van: 'models/vehicles/NormalCar1.fbx',
+  police: 'models/vehicles/Cop.fbx',
 };
 const fbxLoader = new FBXLoader();
 const vehicleModelCache = new Map<string, Promise<THREE.Group>>();
@@ -82,7 +83,7 @@ function loadVehicleSource(path: string) {
   let pending = vehicleModelCache.get(path);
   if (!pending) {
     pending = new Promise<THREE.Group>((resolve, reject) => {
-      fbxLoader.load(path, resolve, undefined, reject);
+      fbxLoader.load(`${import.meta.env.BASE_URL}${path}`, resolve, undefined, reject);
     });
     vehicleModelCache.set(path, pending);
     pending.catch(() => vehicleModelCache.delete(path));
