@@ -162,7 +162,7 @@ export default function HUD({ hud, gameRef, showTouch, onPause, notifications }:
             <b>Drag</b> look
           </span>
           <span>
-            <b>Shift</b> run
+            <b>Shift</b> run / handbrake
           </span>
           <span>
             <b>Space</b> jump
