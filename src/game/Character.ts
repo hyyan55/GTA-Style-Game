@@ -204,8 +204,47 @@ export class Humanoid {
       // Fit the authored Quaternius humanoid to the game's 1.8 m character scale.
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
-      const height = bounds.getSize(new THREE.Vector3()).y;
+      const dimensions = bounds.getSize(new THREE.Vector3());
+      const height = dimensions.y;
       if (!Number.isFinite(height) || height < 0.1) return;
+
+      // The source GLB uses one neutral material. Add vertex colours by body
+      // region so skin, jacket, trousers and shoes read as separate materials.
+      const minY = bounds.min.y;
+      const centerX = (bounds.min.x + bounds.max.x) * 0.5;
+      const skin = new THREE.Color(0xc58f70);
+      const jacket = new THREE.Color(0x315574);
+      const trousers = new THREE.Color(0x3d4858);
+      const shoes = new THREE.Color(0x20252c);
+      const hair = new THREE.Color(0x211d1b);
+      const sample = new THREE.Vector3();
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const positions = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+        const colors = new Float32Array(positions.count * 3);
+        for (let i = 0; i < positions.count; i++) {
+          sample.fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld);
+          const y = THREE.MathUtils.clamp((sample.y - minY) / height, 0, 1);
+          const side = Math.abs(sample.x - centerX);
+          let color = jacket;
+          if (y < 0.085) color = shoes;
+          else if (y < 0.49) color = trousers;
+          else if (y < 0.81) color = jacket;
+          else if (y < 0.955) color = skin;
+          else color = hair;
+          if (side > dimensions.x * 0.36 && y > 0.34 && y < 0.74) color = skin;
+          color.toArray(colors, i * 3);
+        }
+        mesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        const makeMaterial = () => new THREE.MeshStandardMaterial({
+          color: 0xffffff, vertexColors: true, roughness: 0.76, metalness: 0.025,
+        });
+        mesh.material = Array.isArray(mesh.material)
+          ? mesh.material.map(() => makeMaterial())
+          : makeMaterial();
+      });
+
       const scale = 1.82 / height;
       model.scale.setScalar(scale);
       model.updateMatrixWorld(true);
